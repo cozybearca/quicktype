@@ -302,14 +302,14 @@ function unicodeEscape(codePoint: number): string {
 const stringEscape = utf32ConcatMap(escapeNonPrintableMapper(isPrintable, unicodeEscape));
 
 export class SwiftRenderer extends ConvenienceRenderer {
-    private _currentFilename: string | undefined;
-    private _needAny: boolean = false;
-    private _needNull: boolean = false;
+    protected _currentFilename: string | undefined;
+    protected _needAny: boolean = false;
+    protected _needNull: boolean = false;
 
     constructor(
         targetLanguage: TargetLanguage,
         renderContext: RenderContext,
-        private readonly _options: OptionValues<typeof swiftOptions>
+        protected readonly _options: OptionValues<typeof swiftOptions>
     ) {
         super(targetLanguage, renderContext);
     }
@@ -360,22 +360,22 @@ export class SwiftRenderer extends ConvenienceRenderer {
         this.emitCommentLines(lines, "/// ");
     }
 
-    private emitBlock(line: Sourcelike, f: () => void): void {
+    protected emitBlock(line: Sourcelike, f: () => void): void {
         this.emitLine(line, " {");
         this.indent(f);
         this.emitLine("}");
     }
 
-    private emitBlockWithAccess(line: Sourcelike, f: () => void): void {
+    protected emitBlockWithAccess(line: Sourcelike, f: () => void): void {
         this.emitBlock([this.accessLevel, line], f);
     }
 
-    private justTypesCase(justTypes: Sourcelike, notJustTypes: Sourcelike): Sourcelike {
+    protected justTypesCase(justTypes: Sourcelike, notJustTypes: Sourcelike): Sourcelike {
         if (this._options.justTypes) return justTypes;
         else return notJustTypes;
     }
 
-    private get lowerNamingFunction() {
+    protected get lowerNamingFunction() {
         return funPrefixNamer("lower", s => swiftNameStyle("", false, s, acronymStyle(this._options.acronymStyle)));
     }
 
@@ -440,7 +440,7 @@ export class SwiftRenderer extends ConvenienceRenderer {
         return null;
     }
 
-    private renderSingleFileHeaderComments(): void {
+    protected renderSingleFileHeaderComments(): void {
         this.emitLineOnce("// This file was generated from JSON Schema using quicktype, do not modify it directly.");
         this.emitLineOnce("// To parse the JSON, add this file to your project and do:");
         this.emitLineOnce("//");
@@ -466,7 +466,7 @@ export class SwiftRenderer extends ConvenienceRenderer {
         });
     }
 
-    private renderHeader(type: Type, name: Name): void {
+    protected renderHeader(type: Type, name: Name): void {
         if (this.leadingComments !== undefined) {
             this.emitCommentLines(this.leadingComments);
         } else if (!this._options.justTypes) {
@@ -540,7 +540,7 @@ export class SwiftRenderer extends ConvenienceRenderer {
         this.ensureBlankLine();
     }
 
-    private renderTopLevelAlias(t: Type, name: Name): void {
+    protected renderTopLevelAlias(t: Type, name: Name): void {
         this.emitLine(this.accessLevel, "typealias ", name, " = ", this.swiftType(t, true));
     }
 
@@ -566,12 +566,12 @@ export class SwiftRenderer extends ConvenienceRenderer {
         return protocols;
     }
 
-    private getProtocolString(_t: Type, isClass: boolean): Sourcelike {
+    protected getProtocolString(_t: Type, isClass: boolean): Sourcelike {
         const protocols = this.getProtocolsArray(_t, isClass);
         return protocols.length > 0 ? ": " + protocols.join(", ") : "";
     }
 
-    private getEnumPropertyGroups(c: ClassType) {
+    protected getEnumPropertyGroups(c: ClassType) {
         type PropertyGroup = { name: Name; label?: string }[];
 
         let groups: PropertyGroup[] = [];
@@ -600,13 +600,13 @@ export class SwiftRenderer extends ConvenienceRenderer {
     }
 
     /// Access level with trailing space (e.g. "public "), or empty string
-    private get accessLevel(): string {
+    protected get accessLevel(): string {
         return this._options.accessLevel === "internal"
             ? "" // internal is default, so we don't have to emit it
             : this._options.accessLevel + " ";
     }
 
-    private get objcMembersDeclaration(): string {
+    protected get objcMembersDeclaration(): string {
         if (this._options.objcSupport) {
             return "@objcMembers ";
         }
@@ -641,7 +641,7 @@ export class SwiftRenderer extends ConvenienceRenderer {
         return [this.accessLevel, useMutableProperties ? "var " : "let ", name, ": ", this.swiftPropertyType(parameter)];
     }
 
-    private renderClassDefinition(c: ClassType, className: Name): void {
+    protected renderClassDefinition(c: ClassType, className: Name): void {
         this.startFile(className);
 
         this.renderHeader(c, className);
@@ -782,7 +782,7 @@ export class SwiftRenderer extends ConvenienceRenderer {
         return properties;
     }
 
-    private emitNewEncoderDecoder(): void {
+    protected emitNewEncoderDecoder(): void {
         this.emitBlock("func newJSONDecoder() -> JSONDecoder", () => {
             this.emitLine("let decoder = JSONDecoder()");
             if (!this._options.linux) {
@@ -830,7 +830,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         });
     }
 
-    private emitConvenienceInitializersExtension(c: ClassType, className: Name): void {
+    protected emitConvenienceInitializersExtension(c: ClassType, className: Name): void {
         const isClass = this._options.useClasses || this.isCycleBreakerType(c);
         const convenience = isClass ? "convenience " : "";
 
@@ -884,7 +884,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         });
     }
 
-    private renderEnumDefinition(e: EnumType, enumName: Name): void {
+    protected renderEnumDefinition(e: EnumType, enumName: Name): void {
         this.startFile(enumName);
 
         this.emitLineOnce("import Foundation");
@@ -925,7 +925,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         this.endFile();
     }
 
-    private renderUnionDefinition(u: UnionType, unionName: Name): void {
+    protected renderUnionDefinition(u: UnionType, unionName: Name): void {
         this.startFile(unionName);
 
         this.emitLineOnce("import Foundation");
@@ -995,7 +995,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         this.endFile();
     }
 
-    private emitTopLevelMapAndArrayConvenienceInitializerExtensions(t: Type, name: Name): void {
+    protected emitTopLevelMapAndArrayConvenienceInitializerExtensions(t: Type, name: Name): void {
         let extensionSource: Sourcelike;
 
         if (t instanceof ArrayType) {
@@ -1032,7 +1032,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         });
     }
 
-    private emitDecodingError(name: Name): void {
+    protected emitDecodingError(name: Name): void {
         this.emitLine(
             "throw DecodingError.typeMismatch(",
             name,
@@ -1042,7 +1042,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         );
     }
 
-    private emitSupportFunctions4 = (): void => {
+    protected emitSupportFunctions4 = (): void => {
         this.startFile("JSONSchemaSupport");
 
         this.emitLineOnce("import Foundation");
@@ -1122,14 +1122,14 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
                 this.emitItem("    ");
             }
             this.emitMultiline(`public init() {}
-    
+
     public required init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if !container.decodeNil() {
             throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for JSONNull"))
         }
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encodeNil()
@@ -1140,19 +1140,19 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
             this.ensureBlankLine();
             this.emitMultiline(`class JSONCodingKey: CodingKey {
     let key: String
-    
+
     required init?(intValue: Int) {
         return nil
     }
-    
+
     required init?(stringValue: String) {
         key = stringValue
     }
-    
+
     var intValue: Int? {
         return nil
     }
-    
+
     var stringValue: String {
         return key
     }
@@ -1166,12 +1166,12 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
             }
             this.ensureBlankLine();
             this.emitMultiline(`    ${this.accessLevel}let value: Any
-    
+
     static func decodingError(forCodingPath codingPath: [CodingKey]) -> DecodingError {
         let context = DecodingError.Context(codingPath: codingPath, debugDescription: "Cannot decode JSONAny")
         return DecodingError.typeMismatch(JSONAny.self, context)
     }
-    
+
     static func encodingError(forValue value: Any, codingPath: [CodingKey]) -> EncodingError {
         let context = EncodingError.Context(codingPath: codingPath, debugDescription: "Cannot encode JSONAny")
         return EncodingError.invalidValue(value, context)
@@ -1195,7 +1195,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         }
         throw decodingError(forCodingPath: container.codingPath)
     }
-    
+
     static func decode(from container: inout UnkeyedDecodingContainer) throws -> Any {
         if let value = try? container.decode(Bool.self) {
             return value
@@ -1222,7 +1222,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         }
         throw decodingError(forCodingPath: container.codingPath)
     }
-    
+
     static func decode(from container: inout KeyedDecodingContainer<JSONCodingKey>, forKey key: JSONCodingKey) throws -> Any {
         if let value = try? container.decode(Bool.self, forKey: key) {
             return value
@@ -1249,7 +1249,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         }
         throw decodingError(forCodingPath: container.codingPath)
     }
-    
+
     static func decodeArray(from container: inout UnkeyedDecodingContainer) throws -> [Any] {
         var arr: [Any] = []
         while !container.isAtEnd {
@@ -1267,7 +1267,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         }
         return dict
     }
-    
+
     static func encode(to container: inout UnkeyedEncodingContainer, array: [Any]) throws {
         for value in array {
             if let value = value as? Bool {
@@ -1291,7 +1291,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
             }
         }
     }
-    
+
     static func encode(to container: inout KeyedEncodingContainer<JSONCodingKey>, dictionary: [String: Any]) throws {
         for (key, value) in dictionary {
             let key = JSONCodingKey(stringValue: key)!
@@ -1332,7 +1332,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
             throw encodingError(forValue: value, codingPath: container.codingPath)
         }
     }
-    
+
     public required init(from decoder: Decoder) throws {
         if var arrayContainer = try? decoder.unkeyedContainer() {
             self.value = try JSONAny.decodeArray(from: &arrayContainer)
@@ -1343,7 +1343,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
             self.value = try JSONAny.decode(from: container)
         }
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         if let arr = self.value as? [Any] {
             var container = encoder.unkeyedContainer()
@@ -1362,7 +1362,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         this.endFile();
     };
 
-    private emitConvenienceMutator(c: ClassType, className: Name) {
+    protected emitConvenienceMutator(c: ClassType, className: Name) {
         this.emitLine("func with(");
         this.indent(() => {
             this.forEachClassProperty(c, "none", (name, _, p, position) => {
@@ -1414,7 +1414,7 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         }
     }
 
-    private emitURLSessionExtension() {
+    protected emitURLSessionExtension() {
         this.ensureBlankLine();
         this.emitBlockWithAccess("extension URLSession", () => {
             this
@@ -1445,18 +1445,18 @@ encoder.dateEncodingStrategy = .formatted(formatter)`);
         });
     }
 
-    private emitAlamofireExtension() {
+    protected emitAlamofireExtension() {
         this.ensureBlankLine();
         this.emitBlockWithAccess("extension DataRequest", () => {
             this
                 .emitMultiline(`fileprivate func decodableResponseSerializer<T: Decodable>() -> DataResponseSerializer<T> {
     return DataResponseSerializer { _, response, data, error in
         guard error == nil else { return .failure(error!) }
-        
+
         guard let data = data else {
             return .failure(AFError.responseSerializationFailed(reason: .inputDataNil))
         }
-        
+
         return Result { try newJSONDecoder().decode(T.self, from: data) }
     }
 }
